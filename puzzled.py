@@ -53,7 +53,7 @@ async def process_guess(team):
 	puzzle = team.content[1].lower()
 	guess = team.content[2].lower()
 	if puzzle in team.solved_puzzles:
-		await team.channel.send(f"Aw that is exactly right, but you've been exactly this right before. \n Translation: "
+		await team.channel.send(f"Aw that is exactly right, but you've been exactly this right before.\nTranslation: "
 								f"You've already solved the {puzzle} puzzle! Pack up your medical bags and try a "
 								f"different room.")
 	elif puzzle in team.unlocked_puzzles: 
@@ -112,7 +112,7 @@ async def process_hint(team):
 		conn = sqlite3.connect(dbname)
 		c = conn.cursor()
 
-		request = f"**Team**: {team.name}\n**Puzzle**: {puzzle}\n**Link**{team.message.jump_url}\n```{hint_content}```"
+		request = f"**Team**: {team.name}\n**Puzzle**: {puzzle}\n**Link**: {team.message.jump_url}\n```{hint_content}```"
 		hint_channel = team.client.get_channel(hintchannel_ID)
 		c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'hint', team.name, team.now, puzzle, hint_content))
 		conn.commit()
