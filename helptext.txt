@@ -7,7 +7,10 @@ Note: Remove brackets when actually typing in commands.
 `!leaderboard` or `!lb` -- shows the leaderboard
 `!guess [puzzle name with no spaces] [answer]` -- submit an answer for a puzzle
 
--- admin:
+
+--------
+
+admin help:
 !register_team [name:`team name`] [list of pings of members of team]
 !add_hints n -- make sure n>0!
 !reset -- resets the state (i.e. deletes all teams, etc.)

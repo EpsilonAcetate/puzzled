@@ -20,8 +20,12 @@ def ismeta(p):
 	return p=='meta'
 
 async def send_help(team):
-	helptext = open('helptext.txt').read()
-	await team.channel.send(helptext)
+	helptext = open('helptext.txt').read().split('--------')
+	await team.channel.send(helptext[0])
+
+async def admin_help(message, client):
+	helptext = open('helptext.txt').read().split('--------')
+	await message.channel.send(helptext[1])
 
 async def send_puzzle(team):
 	conn = sqlite3.connect(dbname)
@@ -242,7 +246,7 @@ async def reg_team(message, client):
 	puzzles = [x[0] for x in c.fetchall()]
 	for puzzle in puzzles:
 		c.execute(''' INSERT into events values(?,?,?,?,?,?)''', (0, 'unlock', team_name, 0, puzzle, ''))
-		await channel.send(f"{puzzle} puzzle unlocked! You can now use `!status` to see the {p} puzzle.")
+		await channel.send(f"{puzzle} puzzle unlocked! You can now use `!status` to see the {puzzle} puzzle.")
 		conn.commit()
 	c.close()
 	conn.close()
@@ -266,11 +270,8 @@ async def reset(message, client):
 general_commands = {'help':send_help, 'goto': send_puzzle, 'guess':process_guess, 
 					'hint':process_hint, 'status':send_status, 'leaderboard':send_lb, 'lb':send_lb}
 
-admin_commands = {'sudo':sudo, 'pause':pause_team, 'unpause':unpause_team, 'register_team':reg_team, 'add_hints':add_hints, 'rt':reg_team, 'reset':reset}
+admin_commands = {'sudo':sudo, 'pause':pause_team, 'unpause':unpause_team, 'register_team':reg_team, 'add_hints':add_hints, 'rt':reg_team, 'reset':reset, 'adminhelp':admin_help}
 
-
-def run_admin_command(message, client):
-	pass
 
 @client.event
 async def on_message(message):
