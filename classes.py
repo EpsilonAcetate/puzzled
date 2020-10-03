@@ -1,5 +1,6 @@
 import discord
 import sqlite3
+import datetime
 
 meta = open('meta.txt').read().split()
 dbname = meta[1]
@@ -35,15 +36,23 @@ class Team():
 		self.hints_remaining = self.total_hints - self.hints_used
 
 
-		c.execute('''SELECT puzzles.puzzle_name from events inner join puzzles on events.puzzle_name = puzzles.puzzle_name WHERE events.team_name=? AND events.type='solve' ''', (self.name,))
-		self.solved_puzzles = [x[0] for x in c.fetchall()]
-		c.execute('''SELECT puzzles.puzzle_name from events inner join puzzles on events.puzzle_name = puzzles.puzzle_name WHERE events.team_name=? AND events.type='unlock' ''', (self.name,))
-		self.unlocked_puzzles = [x[0] for x in c.fetchall()]
+		c.execute('''SELECT puzzles.puzzle_name, puzzles.link, puzzles.answer from events inner join puzzles on events.puzzle_name = puzzles.puzzle_name WHERE events.team_name=? AND events.type='solve' ''', (self.name,))
+		self.solved = c.fetchall()
+		print(self.solved)
+		self.solved_puzzles = [x[0] for x in self.solved]
+
+		c.execute('''SELECT puzzles.puzzle_name, puzzles.link, puzzles.answer from events inner join puzzles on events.puzzle_name = puzzles.puzzle_name WHERE events.team_name=? AND events.type='unlock' ''', (self.name,))
+		self.unlocked = c.fetchall()
+		self.unlocked_puzzles = [x[0] for x in self.unlocked]
+		
+		self.unsolved = list(set(self.unlocked) - set(self.solved))
 		self.unsolved_puzzles = list(set(self.unlocked_puzzles) - set(self.solved_puzzles))
 		
 		c.close()
 
-		self.now = message.created_at.isoformat(sep=' ', timespec='seconds')
+		#haha timezones go brr
+		self.now = (message.created_at+datetime.timedelta(hours=-4)).isoformat(sep=' ', timespec='seconds')
+		print(self.now)
 
 
 

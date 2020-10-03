@@ -11,7 +11,6 @@ hintchannel_ID = int(meta[2])
 admin_IDs = meta[3]
 
 client = discord.Client()
-
 cc = '!' # command character
 
 auth_admins = [int(x) for x in admin_IDs.split(',')]
@@ -33,6 +32,11 @@ async def send_puzzle(team):
 		await team.channel.send("that's not a valid puzzle, or you haven't unlocked it yet. !help for syntax")
 
 async def process_guess(team):
+
+	if team.paused == 1:
+		await team.channel.send('you are currently paused')
+		return 
+
 	conn = sqlite3.connect(dbname)
 	c = conn.cursor()
 
@@ -41,8 +45,11 @@ async def process_guess(team):
 	if puzzle in team.solved_puzzles:
 		await team.channel.send("puzzle already solved")
 	elif puzzle in team.unlocked_puzzles: 
-		c.execute('''SELECT answer from puzzles where puzzle_name=?''', (puzzle,))
-		answer = c.fetchall()[0][0]
+		c.execute('''SELECT answer, close_answers from puzzles where puzzle_name=?''', (puzzle,))
+		answers = c.fetchall()[0]
+		print(answers)
+		answer = answers[0]
+		close_answers = answers[1].split()
 
 		print(answer, guess)
 
@@ -55,6 +62,9 @@ async def process_guess(team):
 			for p in unlocked_puzzles:
 				c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'unlock', team.name, team.now, p, ''))
 				await team.channel.send('puzzle unlocked: '+p)
+		elif guess in close_answers:
+			await team.channel.send('almost right')
+			c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'guess', team.name, team.now, puzzle, guess))
 		else:
 			await team.channel.send("sorry, wrong :(")
 			c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'guess', team.name, team.now, puzzle, guess))
@@ -91,14 +101,36 @@ async def process_hint(team):
 
 
 async def send_status(team):
-	await team.channel.send("solved puzzles: "+ str(team.solved_puzzles) + "\nunsolved puzzles: "+str(team.unsolved_puzzles) + "\nhints remaining: " + str(team.hints_remaining) + "\nhints used: " + str(team.hints_used))
+	embed=discord.Embed(title="Status - "+team.name, color=0x0)
+	unsolved = ", ".join([ f"[{x}]({y})" for (x,y,z) in team.unsolved])
+	if unsolved == "":
+		unsolved = '-'
+	embed.add_field(name="Unsolved puzzles: ", value=unsolved, inline=False)
+	solved = ", ".join([ f"[{x}]({y}) ({z.upper()})" for (x,y,z) in team.solved])
+	if solved == '':
+		solved = '-'
+	embed.add_field(name="Solved puzzles: ", value=solved, inline=False)
+	embed.add_field(name="Hints used: ", value=team.hints_used)	
+	embed.add_field(name="Hints remaining: ", value=team.hints_remaining)
+
+
+	await team.channel.send(embed=embed)
+
 
 async def send_lb(team):
 	conn = sqlite3.connect(dbname)
 	c = conn.cursor()
 	c.execute(''' SELECT team_name, count(*), MAX(timestamp) from events where type='solve' group by team_name order by count(*) desc, MAX(timestamp)''')
 	lb = c.fetchall()
-	await team.channel.send(str(lb))
+
+	embed=discord.Embed(title="Leaderboard", color=0x0)
+
+	rank=1
+	for (teamname, n, ts) in lb:
+		embed.add_field(name=f"#{rank}: {teamname}", value=f"{n} puzzles solved, latest solve {ts}", inline=False)
+		rank = rank+1
+
+	await team.channel.send(embed=embed)
 
 async def sudo(message, client): 
 	query = re.findall('```(?P<ch>.*?)```', message.content)[0]
@@ -108,6 +140,23 @@ async def sudo(message, client):
 	conn.commit()
 	c.close()
 	conn.close()
+
+async def pause_team(message, client, effect=1):
+	conn = sqlite3.connect(dbname)
+	c = conn.cursor()
+	team_name = re.findall('name:`#?(?P<ch>.*?)`', message.content)[0]
+	c.execute(''' SELECT channel_ID, paused from teams where team_name=? ''', (team_name,))
+	teaminfo = c.fetchall()[0]
+	c.execute(''' DELETE FROM teams where team_name=?''', (team_name,))
+	c.execute(''' INSERT INTO teams values(?,?,?) ''', (team_name, teaminfo[0], effect))
+	conn.commit()
+	c.close()
+	conn.close()
+	await message.channel.send(f'set pausedness of team to {effect}')
+
+async def unpause_team(message, client):
+	await pause_team(message, client, effect=0)
+
 
 async def add_hints(message, client):
 	numhints = int(message.content.split()[1])
@@ -153,7 +202,7 @@ async def reg_team(message, client):
 general_commands = {'help':send_help, 'goto': send_puzzle, 'guess':process_guess, 
 					'hint':process_hint, 'status':send_status, 'leaderboard':send_lb, 'lb':send_lb}
 
-admin_commands = {'sudo':sudo, 'pause':0, 'unpause':0, 'register_team':reg_team, 'add_hints':add_hints, 'rt':reg_team}
+admin_commands = {'sudo':sudo, 'pause':pause_team, 'unpause':unpause_team, 'register_team':reg_team, 'add_hints':add_hints, 'rt':reg_team}
 
 
 def run_admin_command(message, client):
