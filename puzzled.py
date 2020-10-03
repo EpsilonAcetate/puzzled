@@ -187,6 +187,21 @@ async def send_lb(team):
 
 	await team.channel.send(embed=embed)
 
+async def send_lb_admin(message, client):
+	conn = sqlite3.connect(dbname)
+	c = conn.cursor()
+	c.execute(''' SELECT team_name, count(*), MAX(timestamp) from events where type='solve' group by team_name order by count(*) desc, MAX(timestamp)''')
+	lb = c.fetchall()
+
+	embed=discord.Embed(title="Leaderboard", color=0x0)
+
+	rank=1
+	for (teamname, n, ts) in lb:
+		embed.add_field(name=f"#{rank}: {teamname}", value=f"{n} puzzles solved, latest solve {ts}", inline=False)
+		rank = rank+1
+
+	await message.channel.send(embed=embed)
+
 async def sudo(message, client): 
 	query = re.findall('```(?P<ch>.*?)```', message.content)[0]
 	conn = sqlite3.connect(dbname)
@@ -270,7 +285,8 @@ async def reset(message, client):
 general_commands = {'help':send_help, 'goto': send_puzzle, 'guess':process_guess, 
 					'hint':process_hint, 'status':send_status, 'leaderboard':send_lb, 'lb':send_lb}
 
-admin_commands = {'sudo':sudo, 'pause':pause_team, 'unpause':unpause_team, 'register_team':reg_team, 'add_hints':add_hints, 'rt':reg_team, 'reset':reset, 'adminhelp':admin_help}
+admin_commands = {'sudo':sudo, 'pause':pause_team, 'unpause':unpause_team, 'register_team':reg_team, 
+					'add_hints':add_hints, 'rt':reg_team, 'reset':reset, 'adminhelp':admin_help, 'lb2':send_lb_admin}
 
 
 @client.event
@@ -282,7 +298,7 @@ async def on_message(message):
 				await general_commands[cmd](team)
 				break 
 		for cmd in admin_commands.keys():
-			if cc+cmd in message.content and message.author.id in auth_admins:
+			if cc+cmd in message.content and message.author.id in auth_admins and message.channel.id==hintchannel_ID:
 				await admin_commands[cmd](message, client)
 				break 
 
