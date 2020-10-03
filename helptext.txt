@@ -1,14 +1,16 @@
-here's some help!
+Documentation? What's that? I only read the course notes. Anyway, here's some help with command syntax.
 
-!status
-!hint [puzzle name] [description of what youve done]
-!leaderboard or !lb
-!guess [puzzle name] [answer]
+Note: Remove brackets when actually typing in commands.
+
+`!status` -- get links for all the puzzles, see which puzzles you have solved / have left, see how many hints you have / have used
+`!hint [puzzle name with no spaces] [description of what you've done so far & what you're stuck on]` -- get a hint on a puzzle
+`!leaderboard` or `!lb` -- shows the leaderboard
+`!guess [puzzle name with no spaces] [answer]` -- submit an answer for a puzzle
 
 -- admin:
 !register_team [name:`team name`] [list of pings of members of team]
-!add_hints n (will literally parse it, e.g. if negative itll deduct hints etc. be careful)
-!reset -- deletes all teams etc i.e. resets the state
+!add_hints n -- make sure n>0!
+!reset -- resets the state (i.e. deletes all teams, etc.)
 !pause name:`team name` -- prevents that team from guessing
-!unpause name:`team name` -- unpauses
-!sudo -- allows you to directly do sql. be careful 
+!unpause name:`team name` -- allows a paused team to guess again
+!sudo -- allows you to directly do sql, be careful
