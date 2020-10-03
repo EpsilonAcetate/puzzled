@@ -108,7 +108,7 @@ async def process_hint(team):
 		conn = sqlite3.connect(dbname)
 		c = conn.cursor()
 
-		request = 'team ' + team.name + ' is asking for a hint on ' + puzzle + ': ```' + hint_content + '``` link: ' + team.message.jump_url
+		request = f"**Team**: {team.name}\n**Puzzle**: {puzzle}\n**Link**{team.message.jump_url}\n```{hint_content}```"
 		hint_channel = team.client.get_channel(hintchannel_ID)
 		c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'hint', team.name, team.now, puzzle, hint_content))
 		conn.commit()
