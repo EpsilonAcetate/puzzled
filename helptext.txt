@@ -5,7 +5,10 @@ here's some help!
 !leaderboard or !lb
 !guess [puzzle name] [answer]
 
--- admin:
+
+--------
+
+admin help:
 !register_team [name:`team name`] [list of pings of members of team]
 !add_hints n (will literally parse it, e.g. if negative itll deduct hints etc. be careful)
 !reset -- deletes all teams etc i.e. resets the state
