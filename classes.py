@@ -1,7 +1,8 @@
 import discord
 import sqlite3
 
-dbname = open('dbname.txt').read()
+meta = open('meta.txt').read().split()
+dbname = meta[1]
 
 class Team():
 	def __init__(self, message, client): 
@@ -18,10 +19,10 @@ class Team():
 
 		conn = sqlite3.connect(dbname)
 		c = conn.cursor()
-		c.execute('''SELECT team_ID, team_name, channel_ID, paused FROM teams WHERE channel_ID=?''', (self.channel.id,))
+		c.execute('''SELECT team_name, channel_ID, paused FROM teams WHERE channel_ID=?''', (self.channel.id,))
 		res = c.fetchall()[0]
 
-		self.team_ID, self.name, self.channel_ID, self.paused = res[0], res[1], res[2], res[3]
+		self.name, self.channel_ID, self.paused = res[0], res[1], res[2]
 
 		c.execute(''' SELECT count(*) from events where events.team_name=? AND type='hint' ''', (self.name,))
 		self.hints_used = c.fetchall()[0][0]
