@@ -286,7 +286,7 @@ general_commands = {'help':send_help, 'goto': send_puzzle, 'guess':process_guess
 					'hint':process_hint, 'status':send_status, 'leaderboard':send_lb, 'lb':send_lb}
 
 admin_commands = {'sudo':sudo, 'pause':pause_team, 'unpause':unpause_team, 'register_team':reg_team, 
-					'add_hints':add_hints, 'rt':reg_team, 'reset':reset, 'adminhelp':admin_help, 'lb2':send_lb_admin}
+					'add_hints':add_hints, 'rt':reg_team, 'reset':reset, 'adminhelp':admin_help, 'admin-lb':send_lb_admin}
 
 
 @client.event

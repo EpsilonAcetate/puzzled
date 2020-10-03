@@ -17,4 +17,4 @@ admin help:
 !pause name:`team name` -- prevents that team from guessing
 !unpause name:`team name` -- allows a paused team to guess again
 !sudo -- allows you to directly do sql, be careful
-!lb2 -- leaderboard. for admins. 
+!admin-lb -- leaderboard. for admins. 
