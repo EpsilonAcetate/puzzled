@@ -16,6 +16,9 @@ cc = '!' # command character
 
 auth_admins = [int(x) for x in admin_IDs.split(',')]
 
+def ismeta(p):
+	return p=='meta'
+
 async def send_help(team):
 	helptext = open('helptext.txt').read()
 	await team.channel.send(helptext)
@@ -31,12 +34,12 @@ async def send_puzzle(team):
 		await team.channel.send(name + ': ' + puzzlelink)
 	else:
 		await team.channel.send("that's not a valid puzzle, or you haven't unlocked it yet. Use !help for "
-								"command syntax.")
+								"command syntax.") #(TODO)
 
 async def process_guess(team):
 
 	if team.paused == 1:
-		await team.channel.send('you are currently paused')
+		await team.channel.send('you are currently paused') #(TODO)
 		return 
 
 	conn = sqlite3.connect(dbname)
@@ -66,16 +69,21 @@ async def process_guess(team):
 			unlocked_puzzles = [x[0] for x in c.fetchall()]
 			for p in unlocked_puzzles:
 				c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'unlock', team.name, team.now, p, ''))
-				await team.channel.send(f"After much internal arguing and gathering of mental strength, you dare to "
-										f"approach the front door once more.\nTranslation: Congratulations on solving"
-										f"5/6 base puzzles and unlocking the meta! You can now use `!status` to see "
-										f"the {p} puzzle.")
+				if ismeta(p):
+					await team.channel.send(f"After much internal arguing and gathering of mental strength, you dare to "
+											f"approach the front door once more.\nTranslation: Congratulations on solving "
+											f"5/6 base puzzles and unlocking the meta! You can now use `!status` to see "
+											f"the {p} puzzle.")
+				else: 
+					await team.channel.send(f'congrats, unlocked intermediate puzzle {p} (TODO)')
+			if ismeta(puzzle):
+				await team.channel.send('congrats you beat the meta (TODO)')
 		elif guess in close_answers:
-			await team.channel.send('almost right')
+			await team.channel.send('almost right') #TODO 
 			c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'guess', team.name, team.now, puzzle, guess))
 
 		else:
-			await team.channel.send("Hmm...maybe...possibly...no. Translation: Sorry, this is incorrect. Please try "
+			await team.channel.send("Hmm...maybe...possibly...no.\nTranslation: Sorry, this is incorrect. Please try "
 									"again.")
 			c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'guess', team.name, team.now, puzzle, guess))
 		conn.commit()
@@ -132,7 +140,7 @@ async def process_hint(team):
 			  "causing him to ditch his pre-scheduled meeting and frantically ponder a response."
 		s11 = "collected a bunch of dead branches by the sea of a deserted island and started a bomfire on the shore. By waving a blanket over the flames like an intense matador, you manage to send your question via smoke signal just as the blanket catches on fire."
 		hintText = random.choice([s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11])
-		await team.channel.send(f"You've {hintText}\nA TA will materialize with a hint soon~")
+		await team.channel.send(f"You've {hintText}\nA TA will materialize with a hint soon~\n\n You have {team.hints_remaining-1}/{team.total_hints} hints remaining. ")
 		await hint_channel.send(request)
 		c.close()
 		conn.close()
@@ -144,11 +152,11 @@ async def process_hint(team):
 
 async def send_status(team):
 	embed=discord.Embed(title="Status - "+team.name, color=0x0)
-	unsolved = ", ".join([ f"[{x}]({y})" for (x,y,z) in team.unsolved])
+	unsolved = "\n".join([ f"[{x}]({y})" for (x,y,z) in team.unsolved])
 	if unsolved == "":
 		unsolved = '-'
 	embed.add_field(name="Unsolved puzzles: ", value=unsolved, inline=False)
-	solved = ", ".join([ f"[{x}]({y}) ({z.upper()})" for (x,y,z) in team.solved])
+	solved = "\n".join([ f"[{x}]({y}) ({z.upper()})" for (x,y,z) in team.solved])
 	if solved == '':
 		solved = '-'
 	embed.add_field(name="Solved puzzles: ", value=solved, inline=False)
@@ -240,11 +248,24 @@ async def reg_team(message, client):
 	await message.channel.send(f"Team{team_name} registered!")
 
 
+async def reset(message, client):
+	conn = sqlite3.connect(dbname)
+	c = conn.cursor()
+	c.execute(''' DELETE FROM teams''')
+	conn.commit()
+	c.execute(''' DELETE FROM events''')
+	conn.commit()
+	c.execute(''' DELETE FROM hints''')
+	conn.commit()
+	c.execute(''' INSERT INTO hints VALUES(2)''')
+	conn.commit()
+	c.close()
+	conn.close()
 
 general_commands = {'help':send_help, 'goto': send_puzzle, 'guess':process_guess, 
 					'hint':process_hint, 'status':send_status, 'leaderboard':send_lb, 'lb':send_lb}
 
-admin_commands = {'sudo':sudo, 'pause':pause_team, 'unpause':unpause_team, 'register_team':reg_team, 'add_hints':add_hints, 'rt':reg_team}
+admin_commands = {'sudo':sudo, 'pause':pause_team, 'unpause':unpause_team, 'register_team':reg_team, 'add_hints':add_hints, 'rt':reg_team, 'reset':reset}
 
 
 def run_admin_command(message, client):
