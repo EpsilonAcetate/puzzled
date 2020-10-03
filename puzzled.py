@@ -31,15 +31,16 @@ async def send_puzzle(team):
 	if name in team.unlocked_puzzles: 
 		c.execute('''SELECT link from puzzles where puzzle_name=?''', (name,))
 		puzzlelink = c.fetchall()[0][0]
-		await team.channel.send(name + ': ' + puzzlelink)
+		await team.channel.send(f"{name}: {puzzlelink}")
 	else:
-		await team.channel.send("that's not a valid puzzle, or you haven't unlocked it yet. Use !help for "
-								"command syntax.") #(TODO)
+		await team.channel.send("That was either not a valid puzzle, or you haven't unlocked the puzzle yet. Use "
+								"`!help` for command syntax.")
 
 async def process_guess(team):
 
 	if team.paused == 1:
-		await team.channel.send('you are currently paused') #(TODO)
+		await team.channel.send("You've been going through too many test subjects and have been temporarily put on "
+								"hold while the lab processes the backlog of requests.\nTranslation: You're currently prevented from guessing. Please wait until a TA unpauses you to resume. ")
 		return 
 
 	conn = sqlite3.connect(dbname)
@@ -75,11 +76,12 @@ async def process_guess(team):
 											f"5/6 base puzzles and unlocking the meta! You can now use `!status` to see "
 											f"the {p} puzzle.")
 				else: 
-					await team.channel.send(f'congrats, unlocked intermediate puzzle {p} (TODO)')
+					await team.channel.send(f"Congrats, you've unlocked the intermediate puzzle {p}! You can now use `!status` to see the {p} puzzle.")
 			if ismeta(puzzle):
-				await team.channel.send('congrats you beat the meta (TODO)')
+				await team.channel.send("After much fiddling and a combination of guesswork and pure genius, "
+										"you and your trusty teammates have finally derived the cure for COVID-19! It also seems to cure just about any ailment, the new \"magic bullet\" of the world if you will, and you proudly present your cure to the world to see! Just then, you realize that you were but one of the many simulations scraping the web for a suitable cure in the great Game of Life.\nCongratulations on solving the final puzzle and completing the hunt! You're welcome to continue solving any remaining puzzles (for use in tiebreaking or just for fun).")
 		elif guess in close_answers:
-			await team.channel.send('almost right') #TODO 
+			await team.channel.send("Close but no cigar! Not that you should make your health worse...\nTranslation: You're on the right track. Keep going!")
 			c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'guess', team.name, team.now, puzzle, guess))
 
 		else:
@@ -87,7 +89,6 @@ async def process_guess(team):
 									"again.")
 			c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'guess', team.name, team.now, puzzle, guess))
 		conn.commit()
-		# Close but no cigar! Not that you should make your health worse...\nTranslation: You're on the right track. Keep going!
 	else:
 		await team.channel.send("That was either not a valid puzzle, or you haven't unlocked the puzzle yet. Use "
 								"`!help` for command syntax.")
@@ -107,7 +108,7 @@ async def process_hint(team):
 		conn = sqlite3.connect(dbname)
 		c = conn.cursor()
 
-		request = 'team ' + team.name + ' is asking for a hint on ' + puzzle + ': ```' + hint_content + '``` link: ' + team.message.jump_url
+		request = f"**Team**: {team.name}\n**Puzzle**: {puzzle}\n**Link**{team.message.jump_url}\n```{hint_content}```"
 		hint_channel = team.client.get_channel(hintchannel_ID)
 		c.execute(''' INSERT INTO events VALUES(?,?,?,?,?,?)''', (1, 'hint', team.name, team.now, puzzle, hint_content))
 		conn.commit()
@@ -140,7 +141,7 @@ async def process_hint(team):
 			  "causing him to ditch his pre-scheduled meeting and frantically ponder a response."
 		s11 = "collected a bunch of dead branches by the sea of a deserted island and started a bomfire on the shore. By waving a blanket over the flames like an intense matador, you manage to send your question via smoke signal just as the blanket catches on fire."
 		hintText = random.choice([s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11])
-		await team.channel.send(f"You've {hintText}\nA TA will materialize with a hint soon~\n\n You have {team.hints_remaining-1}/{team.total_hints} hints remaining. ")
+		await team.channel.send(f"You've {hintText}\nA TA will materialize with a hint soon~\n\nYou have {team.hints_remaining-1}/{team.total_hints} hints remaining.")
 		await hint_channel.send(request)
 		c.close()
 		conn.close()
@@ -202,7 +203,7 @@ async def pause_team(message, client, effect=1):
 	conn.commit()
 	c.close()
 	conn.close()
-	await message.channel.send(f'set pausedness of team to {effect}')
+	await message.channel.send(f'Set paused-ness of team `{team_name}` to `{effect}`.')
 
 async def unpause_team(message, client):
 	await pause_team(message, client, effect=0)
@@ -241,11 +242,11 @@ async def reg_team(message, client):
 	puzzles = [x[0] for x in c.fetchall()]
 	for puzzle in puzzles:
 		c.execute(''' INSERT into events values(?,?,?,?,?,?)''', (0, 'unlock', team_name, 0, puzzle, ''))
-		await channel.send(f"{puzzle} puzzle unlocked!")
+		await channel.send(f"{puzzle} puzzle unlocked! You can now use `!status` to see the {p} puzzle.")
 		conn.commit()
 	c.close()
 	conn.close()
-	await message.channel.send(f"Team{team_name} registered!")
+	await message.channel.send(f"Registered team `{team_name}`.")
 
 
 async def reset(message, client):
