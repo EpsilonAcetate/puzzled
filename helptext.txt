@@ -1,0 +1,3 @@
+here's some help!
+
+!goto [puzzle_name]
