@@ -1,3 +1,14 @@
 here's some help!
 
-!goto [puzzle_name]
+!status
+!hint [puzzle name] [description of what youve done]
+!leaderboard or !lb
+!guess [puzzle name] [answer]
+
+-- admin:
+!register_team [name:`team name`] [list of pings of members of team]
+!add_hints n (will literally parse it, e.g. if negative itll deduct hints etc. be careful)
+!reset -- deletes all teams etc i.e. resets the state
+!pause name:`team name` -- prevents that team from guessing
+!unpause name:`team name` -- unpauses
+!sudo -- allows you to directly do sql. be careful 
