@@ -282,7 +282,7 @@ async def on_message(message):
 				await general_commands[cmd](team)
 				break 
 		for cmd in admin_commands.keys():
-			if cc+cmd in message.content and message.author.id in auth_admins:
+			if cc+cmd in message.content and message.author.id in auth_admins and message.channel.id==hintchannel_ID:
 				await admin_commands[cmd](message, client)
 				break 
 
